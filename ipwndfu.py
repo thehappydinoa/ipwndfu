@@ -30,7 +30,7 @@ def print_help():
     print('  --decrypt-uid=hexdata\t\tAES decrypt with UID key')
     print('  --encrypt-uid=hexdata\t\tAES encrypt with UID key')
 
-if __name__ == '__main__':
+def main():
     try:
         advanced = ['demote', 'boot', 'dump=', 'hexdump=', 'dump-rom', 'dump-nor=', 'flash-nor=', '24kpwn', 'remove-24kpwn', 'remove-alloc8', 'decrypt-gid=', 'encrypt-gid=', 'decrypt-uid=', 'encrypt-uid=']
         opts, args = getopt.getopt(sys.argv[1:], 'pxf:', advanced)
@@ -411,3 +411,6 @@ if __name__ == '__main__':
                 device.write_memory(DFU_BOOL, b'\x01')
                 device.execute(0, DFU_NOTIFY, DFU_STATE)
                 print('Booted.')
+
+if __name__ == '__main__':
+    main()

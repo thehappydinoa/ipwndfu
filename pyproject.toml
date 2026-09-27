@@ -9,6 +9,10 @@ dependencies = [
     "pyusb>=1.2.1",
 ]
 
+[project.scripts]
+ipwndfu = "ipwndfu:main"
+ipwnrecovery = "ipwnrecovery:main"
+
 [project.optional-dependencies]
 dev = [
     "ruff",

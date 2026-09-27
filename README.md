@@ -22,15 +22,21 @@
 
 ## Quick start guide for checkm8
 
-1. Use a cable to connect device to your Mac. Hold buttons as needed to enter DFU Mode.
+1. Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and dependencies:
 
-2. First run ```./ipwndfu -p``` to exploit the device. Repeat the process if it fails, it is not reliable.
+```
+uv sync
+```
 
-3. Run ```./ipwndfu --dump-rom``` to get a dump of SecureROM.
+2. Use a cable to connect device to your Mac. Hold buttons as needed to enter DFU Mode.
 
-4. Run ```./ipwndfu --decrypt-gid KEYBAG``` to decrypt a keybag.
+3. First run ```uv run ipwndfu -p``` to exploit the device. Repeat the process if it fails, it is not reliable.
 
-5. Run ```./ipwndfu --demote``` to demote device and enable JTAG.
+4. Run ```uv run ipwndfu --dump-rom``` to get a dump of SecureROM.
+
+5. Run ```uv run ipwndfu --decrypt-gid KEYBAG``` to decrypt a keybag.
+
+6. Run ```uv run ipwndfu --demote``` to demote device and enable JTAG.
 
 
 ## Features
@@ -54,10 +60,23 @@
 
 ## Dependencies
 
-This tool should be compatible with Mac and Linux. It won't work in a virtual machine.
+This tool requires Python 3.9+ and should be compatible with Mac and Linux. It won't work in a virtual machine.
 
+* [uv](https://docs.astral.sh/uv/getting-started/installation/) (recommended) or pip
 * libusb, `If you are using Linux: install libusb using your package manager.`
 * [iPhone 3GS iOS 4.3.5 iBSS](#ibss)
+
+### Setup
+
+```
+uv sync
+```
+
+Or without uv:
+
+```
+pip install pyusb>=1.2.1
+```
 
 
 ## Tutorial
