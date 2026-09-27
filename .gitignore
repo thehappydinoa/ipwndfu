@@ -1,4 +1,7 @@
 *.pyc
+__pycache__/
+.venv/
+uv.lock
 nor-backups/nor-*
 libusbfinder/libusb-*
 SecureROM-*

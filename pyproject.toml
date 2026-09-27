@@ -1,0 +1,27 @@
+[project]
+name = "ipwndfu"
+version = "1.0.0"
+description = "Open-source jailbreaking tool for older iOS devices"
+readme = "README.md"
+license = "LGPL-3.0-or-later"
+requires-python = ">=3.9"
+dependencies = [
+    "pyusb>=1.2.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.uv]
+dev-dependencies = [
+    "ruff",
+]

