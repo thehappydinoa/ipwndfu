@@ -70,6 +70,12 @@ def main():
                         checkm8.exploit()
                     elif 'CPID:8955' in serial_number:
                         checkm8.exploit()
+                    elif 'CPID:7000' in serial_number:
+                        checkm8.exploit_a8_a9()
+                    elif 'CPID:8000' in serial_number:
+                        checkm8.exploit_a8_a9()
+                    elif 'CPID:8003' in serial_number:
+                        checkm8.exploit_a8_a9()
                     elif 'CPID:8960' in serial_number:
                         checkm8.exploit()
                     elif 'CPID:8002' in serial_number:
@@ -79,6 +85,8 @@ def main():
                     elif 'CPID:8010' in serial_number:
                         checkm8.exploit()
                     elif 'CPID:8011' in serial_number:
+                        checkm8.exploit()
+                    elif 'CPID:8012' in serial_number:
                         checkm8.exploit()
                     elif 'CPID:8015' in serial_number:
                         checkm8.exploit()
