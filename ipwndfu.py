@@ -14,7 +14,6 @@ def print_help():
     print('  -p\t\t\t\tUSB exploit for pwned DFU Mode')
     print('  -x\t\t\t\tinstall alloc8 exploit to NOR')
     print('  -f file\t\t\tsend file to device in DFU Mode')
-    print('  -F, --force-checkm8\tforce checkm8 exploit (bypass CPID detection)')
     print('Advanced options:')
     print('  --demote\t\t\tdemote device to enable JTAG')
     print('  --boot\t\t\tboot device')
@@ -33,8 +32,8 @@ def print_help():
 
 def main():
     try:
-        advanced = ['demote', 'boot', 'dump=', 'hexdump=', 'dump-rom', 'dump-nor=', 'flash-nor=', '24kpwn', 'remove-24kpwn', 'remove-alloc8', 'decrypt-gid=', 'encrypt-gid=', 'decrypt-uid=', 'encrypt-uid=', 'force-checkm8']
-        opts, args = getopt.getopt(sys.argv[1:], 'pxf:F', advanced)
+        advanced = ['demote', 'boot', 'dump=', 'hexdump=', 'dump-rom', 'dump-nor=', 'flash-nor=', '24kpwn', 'remove-24kpwn', 'remove-alloc8', 'decrypt-gid=', 'encrypt-gid=', 'decrypt-uid=', 'encrypt-uid=']
+        opts, args = getopt.getopt(sys.argv[1:], 'pxf:', advanced)
     except getopt.GetoptError:
         print('ERROR: Invalid arguments provided.')
         print_help()
@@ -45,60 +44,54 @@ def main():
         sys.exit(2)
 
     for opt, arg in opts:
-        if opt in ('-p', '-F', '--force-checkm8'):
+        if opt == '-p':
             device = dfu.acquire_device()
-            if opt in ('-F', '--force-checkm8'):
+            try:
+                serial_number = device.serial_number
                 dfu.release_device(device)
-                print('Forcing checkm8 exploit (--force-checkm8)')
-                checkm8.exploit()
-            else:
-                try:
-                    serial_number = device.serial_number
-                    dfu.release_device(device)
 
-                    if 'CPID:8720' in serial_number:
-                        steaks4uce.exploit()
-                    elif 'CPID:8920' in serial_number:
-                        limera1n.exploit()
-                    elif 'CPID:8922' in serial_number:
-                        limera1n.exploit()
-                    elif 'CPID:8930' in serial_number:
-                        SHAtter.exploit()
-                    elif 'CPID:8947' in serial_number:
-                        checkm8.exploit()
-                    elif 'CPID:8950' in serial_number:
-                        checkm8.exploit()
-                    elif 'CPID:8955' in serial_number:
-                        checkm8.exploit()
-                    elif 'CPID:7000' in serial_number:
-                        checkm8.exploit_a8_a9()
-                    elif 'CPID:8000' in serial_number:
-                        checkm8.exploit_a8_a9()
-                    elif 'CPID:8003' in serial_number:
-                        checkm8.exploit_a8_a9()
-                    elif 'CPID:8960' in serial_number:
-                        checkm8.exploit()
-                    elif 'CPID:8002' in serial_number:
-                        checkm8.exploit()
-                    elif 'CPID:8004' in serial_number:
-                        checkm8.exploit()
-                    elif 'CPID:8010' in serial_number:
-                        checkm8.exploit()
-                    elif 'CPID:8011' in serial_number:
-                        checkm8.exploit()
-                    elif 'CPID:8012' in serial_number:
-                        checkm8.exploit()
-                    elif 'CPID:8015' in serial_number:
-                        checkm8.exploit()
-                    else:
-                        print('Found:', serial_number)
-                        print('ERROR: This device is not supported.')
-                        sys.exit(1)
-                except ValueError:
-                    dfu.release_device(device)
-                    print('Device in DFU mode - serial number not available')
-                    print('Use --force-checkm8 to bypass CPID detection')
+                if 'CPID:8720' in serial_number:
+                    steaks4uce.exploit()
+                elif 'CPID:8920' in serial_number:
+                    limera1n.exploit()
+                elif 'CPID:8922' in serial_number:
+                    limera1n.exploit()
+                elif 'CPID:8930' in serial_number:
+                    SHAtter.exploit()
+                elif 'CPID:8947' in serial_number:
+                    checkm8.exploit()
+                elif 'CPID:8950' in serial_number:
+                    checkm8.exploit()
+                elif 'CPID:8955' in serial_number:
+                    checkm8.exploit()
+                elif 'CPID:7000' in serial_number:
+                    checkm8.exploit_a8_a9()
+                elif 'CPID:8000' in serial_number:
+                    checkm8.exploit_a8_a9()
+                elif 'CPID:8003' in serial_number:
+                    checkm8.exploit_a8_a9()
+                elif 'CPID:8960' in serial_number:
+                    checkm8.exploit()
+                elif 'CPID:8002' in serial_number:
+                    checkm8.exploit()
+                elif 'CPID:8004' in serial_number:
+                    checkm8.exploit()
+                elif 'CPID:8010' in serial_number:
+                    checkm8.exploit()
+                elif 'CPID:8011' in serial_number:
+                    checkm8.exploit()
+                elif 'CPID:8012' in serial_number:
+                    checkm8.exploit()
+                elif 'CPID:8015' in serial_number:
+                    checkm8.exploit()
+                else:
+                    print('Found:', serial_number)
+                    print('ERROR: This device is not supported.')
                     sys.exit(1)
+            except ValueError:
+                dfu.release_device(device)
+                print('Device in DFU mode - serial number not available')
+                sys.exit(1)
 
         if opt == '-x':
             device = PwnedDFUDevice()
