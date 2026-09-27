@@ -24,7 +24,7 @@ class DevicePlatform:
       self.dfu_load_base       = 0xBFF00000
       self.recovery_image_base = 0xBFF00000
       self.recovery_load_base  = 0x80000000
-    if self.cpid == 0x8960:
+    if self.cpid in [0x7000, 0x8000, 0x8003, 0x8960]:
       self.dfu_image_base      = 0x180380000
       self.dfu_load_base       = 0x180000000 # varies (HACK: test purposes)
       self.recovery_image_base = 0x83D7F7000 # varies
@@ -39,7 +39,7 @@ class DevicePlatform:
       self.dfu_load_base       = 0x800000000
       self.recovery_image_base = 0x1800B0000
       self.recovery_load_base  = 0x800000000
-    if self.cpid in [0x8015]:
+    if self.cpid in [0x8012, 0x8015]:
       self.dfu_image_base      = 0x18001C000
       self.dfu_load_base       = 0x800000000
       self.recovery_image_base = 0x18001C000
@@ -48,12 +48,19 @@ class DevicePlatform:
   def name(self):
     if 0x8720 <= self.cpid <= 0x8960:
       return 's5l%xxsi' % self.cpid
-    elif self.cpid in [0x7002, 0x8000, 0x8001, 0x8003]:
+    elif self.cpid in [0x7000, 0x7002, 0x8000, 0x8001, 0x8003]:
       return 's%xsi' % self.cpid
     else:
       return 't%xsi' % self.cpid
 
 all_platforms = [
+  DevicePlatform(cpid=0x7000, cprv=0x11, scep=0x01, arch='arm64', srtg='iBoot-1992.0.0.1.19',
+    rom_base=0x100000000, rom_size=0x80000, rom_sha1='c4dcd22ae135c14244fc2b62165c85effa566bfe',
+    sram_base=0x180000000, sram_size=0x400000,
+    dram_base=0x800000000,
+    nonce_length=20, sep_nonce_length=20,
+    demotion_reg=0x20E02A000,
+  ),
   DevicePlatform(cpid=0x8947, cprv=0x00, scep=0x10, arch='armv7', srtg='iBoot-1458.2',
     rom_base=0x3F000000, rom_size=0x10000, rom_sha1='d9320ddd4bdb1de79ae0601f20e7db23441ab1a7',
     sram_base=0x34000000, sram_size=0x40000,
@@ -89,6 +96,20 @@ all_platforms = [
     nonce_length=32, sep_nonce_length=20,
     demotion_reg=0x481BC000,
   ),
+  DevicePlatform(cpid=0x8000, cprv=0x20, scep=0x01, arch='arm64', srtg='iBoot-2234.0.0.3.3',
+    rom_base=0x100000000, rom_size=0x80000, rom_sha1='9979dce30e913c888cf77234c7a7e2a7fa676f4c',
+    sram_base=0x180000000, sram_size=0x400000,
+    dram_base=0x800000000,
+    nonce_length=32, sep_nonce_length=20,
+    demotion_reg=0x2102BC000,
+  ),
+  DevicePlatform(cpid=0x8003, cprv=0x01, scep=0x01, arch='arm64', srtg='iBoot-2234.0.0.2.22',
+    rom_base=0x100000000, rom_size=0x80000, rom_sha1='93d69e2430e2f0c161e3e1144b69b4da1859169b',
+    sram_base=0x180000000, sram_size=0x400000,
+    dram_base=0x800000000,
+    nonce_length=32, sep_nonce_length=20,
+    demotion_reg=0x2102BC000,
+  ),
   DevicePlatform(cpid=0x8960, cprv=0x11, scep=0x01, arch='arm64', srtg='iBoot-1704.10',
     rom_base=0x100000000, rom_size=0x80000, rom_sha1='2ae035c46e02ca40ae777f89a6637be694558f0a',
     sram_base=0x180000000, sram_size=0x400000,
@@ -109,6 +130,13 @@ all_platforms = [
     dram_base=0x800000000,
     nonce_length=32, sep_nonce_length=20,
     demotion_reg=0x2102BC000,
+  ),
+  DevicePlatform(cpid=0x8012, cprv=0x10, scep=0x01, arch='arm64', srtg='iBoot-3401.0.0.1.16',
+    rom_base=0x100000000, rom_size=0x100000, rom_sha1='68be532dea4cc05b393ef5f49962aef3f99d629d',
+    sram_base=0x180000000, sram_size=0x200000,
+    dram_base=0x800000000,
+    nonce_length=32, sep_nonce_length=20,
+    demotion_reg=0x2112BC000,
   ),
   DevicePlatform(cpid=0x8015, cprv=0x11, scep=0x01, arch='arm64', srtg='iBoot-3332.0.0.1.23',
     rom_base=0x100000000, rom_size=0x100000, rom_sha1='96fccb1a63de1a2d50ff14555d3898a5af46e9b1',
