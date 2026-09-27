@@ -16,7 +16,7 @@ def print_help():
     print('  --enable-uart\t\t\tset debug-uarts to 3 and reboot device')
     print('  --exit-recovery-loop\t\tenable auto-boot and reboot device')
 
-if __name__ == '__main__':
+def main():
     try:
         advanced = ['exit-recovery-loop', 'enable-uart']
         opts, args = getopt.getopt(sys.argv[1:], 'c:f:', advanced)
@@ -73,3 +73,6 @@ if __name__ == '__main__':
                 pass
 
             recovery.release_device(device)
+
+if __name__ == "__main__":
+    main()

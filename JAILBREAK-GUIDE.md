@@ -13,7 +13,7 @@
 5. Use ipwndfu to put your device into pwned DFU Mode:
 
 ```
-$ ./ipwndfu -p
+$ uv run ipwndfu -p
 *** based on limera1n exploit (heap overflow) by geohot ***
 Found: CPID:8920 CPRV:15 CPFM:03 SCEP:03 BDID:00 ECID:XXXXXXXXXXXXXXXX SRTG:[iBoot-359.3.2]
 Device is now in pwned DFU Mode.
@@ -22,7 +22,7 @@ Device is now in pwned DFU Mode.
 6. Once in pwned DFU Mode, use the -x flag to install the alloc8 exploit. This step will replace 24Kpwn exploit with alloc8.
 
 ```
-$ ./ipwndfu -x
+$ uv run ipwndfu -x
 Installing alloc8 exploit to NOR.
 Dumping NOR, part 1/8.
 Dumping NOR, part 2/8.
@@ -129,6 +129,6 @@ EE = Color
 
 1. Enter DFU Mode: https://www.theiphonewiki.com/wiki/DFU_Mode
 
-2. Run exploit to put your phone into pwned DFU Mode. You can use `./ipwndfu -p`.
+2. Run exploit to put your phone into pwned DFU Mode. You can use `uv run ipwndfu -p`.
 
 3. Any version of iTunes should work. In iTunes, hold Option (or SHIFT if using Windows) and click Restore. You should be prompted to choose a file. Choose your custom IPSW.
